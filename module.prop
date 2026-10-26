@@ -1,0 +1,7 @@
+id=k100pm_audio_plus
+name=REDMI K100 PRO MAX 音质控制台
+version=1.0
+versionCode=100
+author=蓝鲸鱼🐳
+description=REDMI K100 PRO MAX 音质控制台｜内置可视化 WebUI 调音台｜K100PM 调整版默认曲线（20 段 × 10 槽位，±20 dB）｜Dolby 媒体杜比化｜OTG 常开（可选）｜低频扎实 · 人声凝聚 · 声场开阔
+minMagisk=20400

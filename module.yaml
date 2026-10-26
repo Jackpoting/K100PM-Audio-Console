@@ -1,0 +1,14 @@
+schemaVersion: 1
+id: k100pm_audio_plus
+name: REDMI K100 PRO MAX 音质控制台
+summary: 面向 REDMI K100 Pro Max 的 Dolby DAX3 全链路调音模块，内置离线 WebUI、20 段 ±20 dB 增益、10 个槽位、曲线库与可选 OTG 常开。
+description: docs/功能说明.md
+license: MIT
+tags: [audio, dolby, equalizer, webui, magisk, kernelsu]
+authors:
+  - name: 蓝鲸鱼🐳
+compatibility:
+  androidMinApi: 35
+  architectures: [arm64-v8a]
+release:
+  assetPattern: "REDMI_K100_PRO_MAX_*_WebUI.zip"

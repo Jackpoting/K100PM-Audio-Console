@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#07090d">
+<title>REDMI K100 PRO MAX 音质控制台</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="aurora" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 32 32" fill="none">
+        <path d="M4 20c2 0 2-8 4-8s2 12 4 12 2-16 4-16 2 14 4 14 2-10 4-10 2 6 4 6" stroke="url(#lg)" stroke-width="2.4" stroke-linecap="round"/>
+        <defs><linearGradient id="lg" x1="4" y1="8" x2="28" y2="24"><stop stop-color="#4fd1ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>REDMI K100 PRO MAX 音质控制台</h1>
+      <p><span id="verLabel">1.0</span> · Dolby DAX3 · <span id="rootLabel">检测中</span></p>
+    </div>
+  </div>
+
+  <div class="chips" id="statusChips"></div>
+
+  <div class="top-actions">
+    <button class="icon-btn" id="btnRefresh" title="刷新状态" aria-label="刷新状态">
+      <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+    </button>
+    <button class="icon-btn" id="btnReload" title="重启音频服务" aria-label="重启音频服务">
+      <svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+    </button>
+    <button class="icon-btn danger" id="btnReboot" title="重启手机" aria-label="重启手机">
+      <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M6.5 6.5a8 8 0 1 0 11 0"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="banner" id="previewBanner" hidden>
+  <strong>预览模式</strong>
+  <span>未检测到 KernelSU WebUI 接口，本页仅演示界面与交互，不会写入设备。</span>
+</div>
+
+<nav class="tabs" id="tabs" role="tablist">
+  <button class="tab is-active" data-tab="mixer" role="tab">
+    <svg viewBox="0 0 24 24"><path d="M4 18V9M9 18V5M14 18v-6M19 18V7"/></svg><span>调音台</span>
+  </button>
+  <button class="tab" data-tab="library" role="tab">
+    <svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/></svg><span>曲线库</span>
+  </button>
+  <button class="tab" data-tab="props" role="tab">
+    <svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>DAX 属性</span>
+  </button>
+  <button class="tab" data-tab="otg" role="tab">
+    <svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M8.5 6.5 12 3l3.5 3.5"/><rect x="7" y="13" width="10" height="7" rx="2"/><path d="M10 16.5h4"/></svg><span>OTG</span>
+  </button>
+  <button class="tab" data-tab="status" role="tab">
+    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg><span>运行状态</span>
+  </button>
+  <button class="tab" data-tab="log" role="tab">
+    <svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 10h8M8 14h8M8 18h5"/></svg><span>日志</span>
+  </button>
+</nav>
+
+<main id="main">
+
+  <div class="card fatal" id="fatalPanel" hidden>
+    <header class="card-head">
+      <div>
+        <h2>初始化失败</h2>
+        <p class="sub">WebUI 无法连接模块命令 <code>bin/k100pm.sh</code>，下面是诊断信息</p>
+      </div>
+    </header>
+    <p class="fatal-msg" id="fatalMsg"></p>
+    <pre class="code fatal-pre" id="fatalDiag"></pre>
+    <div class="btns">
+      <button class="btn primary" id="btnFatalRetry">重试连接</button>
+      <button class="btn ghost" id="btnFatalCopy">复制诊断信息</button>
+    </div>
+    <p class="foot-note">常见原因：模块未安装到 <code>/data/adb/modules/k100pm_audio_plus</code>、KernelSU 版本过旧（WebUI 桥不支持）、或模块被停用。</p>
+  </div>
+
+  <!-- ================= 调音台 ================= -->
+  <section class="view is-active" data-view="mixer">
+    <div class="layout">
+      <article class="card curve-card">
+        <header class="card-head">
+          <div>
+            <h2>曲线编辑</h2>
+            <p class="sub">拖动节点或下方滑杆，20 段固定频点，单位 dB（0.01 dB 定点）</p>
+          </div>
+          <div class="head-tools">
+            <label class="switch" title="显示参考曲线">
+              <input type="checkbox" id="refToggle" checked><span></span>参考线
+            </label>
+          </div>
+        </header>
+        <div class="canvas-wrap">
+          <canvas id="curveCanvas"></canvas>
+          <div class="tip" id="curveTip" hidden></div>
+        </div>
+        <div class="legend">
+          <span><i class="dot solid"></i>当前曲线 <b id="legendName">K100PM 基准曲线</b></span>
+          <span><i class="dot dashed"></i>参考曲线 <b id="legendRefName">K100PM 基准曲线</b></span>
+          <span class="push"><em id="rangeReadout">+3.20 / +0.01 dB</em></span>
+        </div>
+        <footer class="card-foot">
+          <div class="foot-name">
+            编辑中：<strong id="draftName">K100PM 基准曲线</strong>
+            <span class="dirty-dot" id="dirtyDot" hidden title="有未写入的改动"></span>
+          </div>
+          <div class="btns">
+            <button class="btn ghost" id="btnSaveCurve">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>保存为曲线
+            </button>
+            <button class="btn primary" id="btnApplyAll">
+              <svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>应用并写入
+            </button>
+          </div>
+        </footer>
+      </article>
+
+      <article class="card bands-card">
+        <header class="card-head">
+          <div>
+            <h2>20 段增益</h2>
+            <p class="sub">范围 ±20 dB，数值可直接输入</p>
+          </div>
+          <div class="head-tools">
+            <button class="chip-btn" id="btnBandsRestore" title="恢复为当前曲线的 20 段增益">恢复</button>
+            <button class="chip-btn" id="btnZero">全部归零</button>
+          </div>
+        </header>
+        <div class="bands" id="bands"></div>
+        <footer class="card-foot compact">
+          <span class="hint">提示：长按滑杆微调更精确</span>
+        </footer>
+      </article>
+    </div>
+
+    <article class="card slots-card">
+      <header class="card-head">
+        <div>
+          <h2>槽位映射 <span class="pill" id="slotPill">10</span></h2>
+          <p class="sub">IEQ 1–3 为 Dolby 内容 IEQ 目标曲线，GEQ 0–6 为图形均衡预设；写入后由 Dolby 音频链读取</p>
+        </div>
+        <span class="badge" id="slotStateBadge">已同步</span>
+      </header>
+      <div class="slot-grid" id="slotGrid"></div>
+      <footer class="card-foot">
+        <div class="btns wrap">
+          <button class="btn ghost sm" id="btnSlotsAllDraft">全部 = 当前曲线</button>
+          <button class="btn ghost sm" id="btnSlotsIeq">仅 IEQ</button>
+          <button class="btn ghost sm" id="btnSlotsGeq">仅 GEQ</button>
+          <button class="btn ghost sm" id="btnSlotsOrig">恢复原厂映射</button>
+        </div>
+        <button class="btn primary" id="btnWriteSlots">
+          <svg viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>写入槽位配置
+        </button>
+      </footer>
+    </article>
+  </section>
+
+  <!-- ================= 曲线库 ================= -->
+  <section class="view" data-view="library">
+    <div class="section-head">
+      <div>
+        <h2>曲线库</h2>
+        <p class="sub">内置默认曲线、基准曲线、原厂曲线与自定义曲线；可导入 / 导出 20 段曲线 JSON</p>
+      </div>
+      <div class="btns">
+        <button class="btn ghost" id="btnImport">
+          <svg viewBox="0 0 24 24"><path d="M12 20V9"/><path d="M7 13l5-5 5 5"/><path d="M5 4h14"/></svg>导入 JSON
+        </button>
+        <input type="file" id="fileInput" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <div class="curve-grid" id="curveGrid"></div>
+
+    <article class="card import-card">
+      <header class="card-head">
+        <div><h2>导入说明</h2><p class="sub">兼容 20 段增益 JSON / 自定义曲线</p></div>
+      </header>
+      <div class="import-body">
+        <pre class="code">{
+  "format": "com.weich.daptune.profile",
+  "band_plan": "dolby-dap-20-v1",
+  "frequencies_hz": [47, 141, ...],
+  "gains_q4": [320, 299, ...]
+}</pre>
+        <ul class="bullets">
+          <li><b>gains_q4</b> / <b>gains</b> / <b>bands[].gain</b> 均可识别，自动取 20 段。</li>
+          <li>数值单位为 <b>0.01 dB</b>（与 Dolby <code>target</code> / <code>gain</code> 一致），320 = +3.20 dB。</li>
+          <li>频点必须与 <b>dolby-dap-20-v1</b> 计划一致，导入时会校验。</li>
+        </ul>
+      </div>
+    </article>
+  </section>
+
+  <!-- ================= DAX 属性 ================= -->
+  <section class="view" data-view="props">
+    <div class="section-head">
+      <div>
+        <h2>DAX 属性</h2>
+        <p class="sub">service.sh 开机注入的 Dolby 属性，可在此热改并保存到 <code>data/props.conf</code></p>
+      </div>
+      <div class="btns">
+        <button class="btn ghost" id="btnPropsReload">重新读取</button>
+        <button class="btn primary" id="btnPropsSave">保存并应用</button>
+      </div>
+    </div>
+    <div id="propsWrap" class="props-wrap"></div>
+    <p class="foot-note">
+      说明：<code>persist.*</code> 属性通过 resetprop 立即生效；部分机型需重启 Dolby 服务或手机后生效。
+      <code>ro.*</code> 属性由 <code>system.prop</code> 在开机时注入，不在本页修改。
+    </p>
+  </section>
+
+  <!-- ================= USB OTG ================= -->
+  <section class="view" data-view="otg">
+    <div class="section-head">
+      <div>
+        <h2>USB OTG</h2>
+        <p class="sub">开机自动开启并保持常开，绕过系统「10 分钟自动关闭」限制</p>
+      </div>
+      <div class="btns">
+        <button class="btn ghost" id="btnOtgProbe">诊断</button>
+        <button class="btn ghost" id="btnOtgRefresh">刷新</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <article class="card">
+        <header class="card-head">
+          <div>
+            <h2>当前状态</h2>
+            <p class="sub">控制节点：<code id="otgNode">检测中…</code></p>
+          </div>
+          <span class="badge" id="otgBadge">检测中</span>
+        </header>
+        <dl class="info" id="otgInfo">
+          <dt>状态</dt><dd>正在读取…</dd>
+        </dl>
+        <div class="btns wrap">
+          <button class="btn primary" id="btnOtgOn">立即开启</button>
+          <button class="btn ghost" id="btnOtgOff">关闭</button>
+        </div>
+        <p class="foot-note">开启 OTG 时手机处于 USB Host 模式，连接电脑可能无法被识别为存储设备；需要连电脑时请先关闭 OTG。</p>
+      </article>
+
+      <article class="card">
+        <header class="card-head">
+          <div>
+            <h2>开机与超时</h2>
+            <p class="sub">保存在 <code>data/otg.conf</code>，修改后点「保存并应用」</p>
+          </div>
+        </header>
+        <div class="otg-opts">
+          <label class="switch"><input type="checkbox" id="otgAuto"><span></span>开机自动开启</label>
+          <label class="switch"><input type="checkbox" id="otgKeep"><span></span>保持常开（永不超时）</label>
+          <label class="otg-interval">复查间隔
+            <select id="otgInterval">
+              <option value="10">10 秒</option>
+              <option value="15">15 秒</option>
+              <option value="30" selected>30 秒</option>
+              <option value="60">60 秒</option>
+              <option value="120">120 秒</option>
+            </select>
+          </label>
+        </div>
+        <p class="foot-note">「保持常开」会常驻一个轻量守护进程，按间隔读取 OTG 节点；被系统关闭时自动重新开启。OTG 常开会增加待机耗电，建议按需开启。</p>
+        <div class="btns"><button class="btn primary" id="btnOtgSave">保存并应用</button></div>
+      </article>
+    </div>
+
+    <article class="card">
+      <header class="card-head">
+        <div><h2>诊断输出</h2><p class="sub">节点 / 权限 / 属性 / SELinux 信息（需要 Root 执行）</p></div>
+      </header>
+      <p class="muted" id="otgProbeHint">点击右上角「诊断」获取本机 OTG 控制节点与权限状态。</p>
+      <pre class="code otg-probe" id="otgProbeOut" hidden></pre>
+    </article>
+  </section>
+
+  <!-- ================= 运行状态 ================= -->
+  <section class="view" data-view="status">
+    <div class="layout">
+      <article class="card">
+        <header class="card-head">
+          <div><h2>模块概览</h2><p class="sub">实时读取自 <code>module.prop</code> 与运行环境</p></div>
+          <button class="icon-btn sm" id="btnStatusRefresh" aria-label="刷新">
+            <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+          </button>
+        </header>
+        <dl class="info" id="infoGrid"></dl>
+      </article>
+
+      <article class="card">
+        <header class="card-head"><div><h2>配置链路</h2><p class="sub">模块文件 → bind 挂载 → 系统路径</p></div></header>
+        <div class="mounts" id="mountList"></div>
+        <div class="chains" id="chainNotes"></div>
+      </article>
+    </div>
+
+    <article class="card">
+      <header class="card-head">
+        <div><h2>完整性校验</h2><p class="sub">模板、槽位、三份配置哈希、运行态挂载</p></div>
+        <button class="btn ghost sm" id="btnVerify">重新校验</button>
+      </header>
+      <div class="checks" id="checkList"><p class="muted">点击「重新校验」开始检测</p></div>
+    </article>
+
+    <article class="card">
+      <header class="card-head"><div><h2>维护操作</h2><p class="sub">高风险操作会二次确认</p></div></header>
+      <div class="btns wrap">
+        <button class="btn ghost" id="btnReload2">重启音频服务</button>
+        <button class="btn ghost" id="btnReset">恢复原厂曲线</button>
+        <button class="btn danger" id="btnReboot2">重启手机</button>
+      </div>
+      <p class="foot-note">「恢复原厂曲线」会把 Link / vendor / factory 三份 dax-default.xml 还原为模块原始调音，并重置槽位映射。</p>
+    </article>
+  </section>
+
+  <!-- ================= 日志 ================= -->
+  <section class="view" data-view="log">
+    <div class="section-head">
+      <div><h2>运行日志</h2><p class="sub"><code>/data/local/tmp/k100pm_audio.log</code> 与 WebUI 操作日志</p></div>
+      <div class="btns">
+        <label class="switch"><input type="checkbox" id="autoLog"><span></span>自动刷新</label>
+        <button class="btn ghost" id="btnLogReload">刷新</button>
+      </div>
+    </div>
+    <article class="card log-card">
+      <pre class="log" id="logView">加载中…</pre>
+      <footer class="card-foot compact"><span class="hint" id="logMeta"></span></footer>
+    </article>
+  </section>
+
+</main>
+
+<footer class="page-foot">
+  <span>REDMI K100 PRO MAX 音质控制台 · 蓝鲸鱼🐳 · 1.0</span>
+  <span class="dotsep">·</span>
+  <span>K100PM 基准曲线 · dolby-dap-20-v1</span>
+</footer>
+
+<div class="applybar" id="applyBar" hidden>
+  <div class="applybar-text"><b>曲线已修改</b><span>尚未写入模块配置</span></div>
+  <div class="btns">
+    <button class="btn ghost sm" id="btnDiscard">放弃</button>
+    <button class="btn primary sm" id="btnApplyBar">写入</button>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="modal-root" id="modalRoot" hidden>
+  <div class="modal-backdrop" data-close="1"></div>
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="modalTitle">标题</h3>
+    <p id="modalDesc" class="sub"></p>
+    <input class="input" id="modalInput" hidden>
+    <div class="modal-btns">
+      <button class="btn ghost" id="modalCancel">取消</button>
+      <button class="btn primary" id="modalOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/mockdata.js"></script>
+<script src="js/bridge.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

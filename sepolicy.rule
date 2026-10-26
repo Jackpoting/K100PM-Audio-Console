@@ -1,0 +1,13 @@
+allow su vendor_configs_file dir { read search open getattr add_name write remove_name }
+allow su vendor_configs_file file { read write open getattr create append unlink rename setattr mounton }
+allow su default_prop property_service set
+allow su system_prop property_service set
+allow su audio_prop property_service set
+allow su audio_default_prop property_service set
+allow su audio_device file { read write open getattr create append }
+allow su vendor_audio_configs_file dir { read search open getattr }
+allow su vendor_audio_configs_file file { read write open getattr create append }
+# KSU/APatch post-fs-data mount 权限（兼容 Magisk / KernelSU / APatch）
+allow su labeledfs filesystem { mount unmount }
+allow init labeledfs filesystem { mount unmount }
+allow init vendor_configs_file file { mounton }
